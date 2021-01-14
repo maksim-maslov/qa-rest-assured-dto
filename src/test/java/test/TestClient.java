@@ -1,7 +1,16 @@
 package test;
 
+import dto.ClientDto;
+
+import io.restassured.RestAssured;
+import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
+import org.apache.http.HttpStatus;
 import org.junit.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -9,38 +18,45 @@ import static org.hamcrest.Matchers.equalTo;
 
 public class TestClient {
 
+    @Before
+    public void configureRestAssured() {
+
+        RestAssured.baseURI = "http://aqueous-forest-93594.herokuapp.com/api";
+
+        RestAssured.requestSpecification = given()
+                .filter(new ResponseLoggingFilter())
+                .log().everything()
+                .contentType(ContentType.JSON);
+
+        RestAssured.responseSpecification = given()
+                .then()
+                .statusCode(HttpStatus.SC_OK);
+    }
+
     @Test
     public void loginGetOrdersAddDeposit() {
 
-        String userId;
+        List<ClientDto> clientDto = given()
+            .when().get("/clients?name=test&email=test@test.ru")
+            .then()
+            .extract().jsonPath().getList("", ClientDto.class);
 
-        userId = given()
-                .baseUri("http://aqueous-forest-93594.herokuapp.com/api")
-                .log().everything()
-                .contentType(ContentType.JSON)
-                .when().get("/clients?name=test&email=test@test.ru")
-                .then().log().everything()
-                .assertThat().statusCode(200)
-                .extract().response().body().path("[0]._id");
-
+        String userId = clientDto.get(0).get_id();
 
         given()
-                .baseUri("http://aqueous-forest-93594.herokuapp.com/api")
-                .log().everything()
-                .contentType(ContentType.JSON)
-                .param("userId", userId)
-                .when().get("/orders")
-                .then().log().everything()
-                .assertThat().statusCode(200);
+            .param("userId", userId)
+            .when().get("/orders")
+            .then();
 
+        Map<String, Object> balance = new HashMap<>();
+        balance.put("balance", clientDto.get(0).getBalance() + 100);
 
         given()
-                .baseUri("http://aqueous-forest-93594.herokuapp.com/api")
-                .log().everything()
-                .contentType(ContentType.JSON)
-                .when().put("/clients/" + userId)
-                .then().log().everything()
-                .assertThat().statusCode(200)
-                .assertThat().body("message", equalTo("Client updated"));
+            .body(balance)
+            .when().put("/clients/" + userId)
+            .then()
+            .assertThat().body("message", equalTo("Client updated"));
     }
 }
+
+
