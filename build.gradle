@@ -1,54 +1,49 @@
+plugins {
+    id 'java'
+    id 'io.qameta.allure' version '2.8.1'
+}
 
-group 'qa-group'
-version '1.0-SNAPSHOT'
-
-apply plugin: 'java'
-
-sourceCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
     mavenCentral()
-//    jcenter()
-}
-
-ext {
-    restAssuredVer = "3.0.7"
+    maven {
+        url "https://plugins.gradle.org/m2/"
+    }
 }
 
 dependencies {
-    compile group: 'junit', name: 'junit', version: '4.12'
-    compile "io.rest-assured:rest-assured:$restAssuredVer"
-    compile "com.fasterxml.jackson.core:jackson-databind:2.8.7"
-    compile 'org.projectlombok:lombok:1.14.2'
+    implementation "io.qameta.allure:allure-gradle:${Versions.allureGradle}"
+    implementation "junit:junit:${Versions.junit}"
+    implementation "io.rest-assured:rest-assured:${Versions.restAssured}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${Versions.jacksonDatabind}"
+    implementation "org.projectlombok:lombok:${Versions.lombok}"
+    implementation "io.qameta.allure:allure-junit4:${Versions.allureJunit}"
 }
 
-//apply plugin: 'io.qameta.allure'
-//
-//
-//
-//allure {
-//    aspectjweaver = true
-//    autoconfigure = true
-//    version = '2.5.0'
-//
-//    resultsDir = file('.../allure-results')
-//    reportDir = file('.../allure-reports')
-//    useJUnit4 {
-//        version = '2.0-BETA10'
-//    }
-//    clean true
-//}
+allure {
+    aspectjweaver = true
+    autoconfigure = true
+    version = '2.8.1'
+    resultsDir = file('../allure-results')
+    reportDir = file('../allure-reports')
+    useJUnit4 {
+        version = '2.0-BETA10'
+    }
+    clean true
+    downloadLink = 'https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.8.1/allure-commandline-2.8.1.zip'
+}
 
+test {
+    systemProperty 'allure.results.directory', "$projectDir/build/allure-results"
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED", "STANDARD_OUT", "STANDARD_ERROR"
+    }
+    scanForTestClasses = false
+    testLogging.showStandardStreams = true
+    dependsOn 'cleanTest'
+}
 
-//buildscript {
-//    repositories {
-//        maven {
-//            url "https://plugins.gradle.org/m2/"
-//        }
-//    }
-//    dependencies {
-//        classpath "io.franzbecker:gradle-lombok:4.0.0"
-//    }
-//}
-//
-//apply plugin: "io.franzbecker.gradle-lombok"
+group 'org.example.qa'
+version '1.0'
